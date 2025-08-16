@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 3D 模型生成器</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app">
+        <header>
+            <h1>AI 3D 模型生成器</h1>
+            <p>输入文本提示，生成您的 3D 模型</p>
+        </header>
+        <main>
+            <div id="chat-container">
+                <div id="chat-box"></div>
+                <div id="viewer-container"></div>
+            </div>
+            <form id="prompt-form">
+                <input type="text" id="prompt-input" placeholder="例如：一辆红色的跑车" autocomplete="off">
+                <button type="submit">生成</button>
+                <button type="button" id="download-btn" style="display: none;">下载</button>
+            </form>
+        </main>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
