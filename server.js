@@ -23,7 +23,7 @@ if (!MESHY_API_KEY) {
 }
 
 app.post('/api/text-to-3d', async (req, res) => {
-    const { prompt, art_style } = req.body;
+    const { prompt } = req.body;
 
     if (!prompt) {
         return res.status(400).json({ error: 'Prompt is required' });
@@ -39,7 +39,7 @@ app.post('/api/text-to-3d', async (req, res) => {
             },
             body: JSON.stringify({
                 prompt: prompt,
-                art_style: art_style,
+                art_style: 'realistic',
                 mode: "preview"
             }),
         });
