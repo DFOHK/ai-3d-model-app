@@ -2,12 +2,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('generator-form');
     const promptInput = document.getElementById('prompt-input');
     const generateBtn = document.getElementById('generate-btn');
-    const downloadBtn = document.getElementById('download-btn');
     const messageArea = document.getElementById('message-area');
     const modelViewer = document.getElementById('model-viewer');
-    const viewerIframe = document.getElementById('viewer-iframe');
-
-    let modelUrl = null; // Variable to store the model URL
+    const downloadContainer = document.getElementById('download-container');
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -18,12 +15,13 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Reset UI for new generation
+        // Reset UI
         generateBtn.disabled = true;
         generateBtn.textContent = 'Generating...';
         modelViewer.classList.add('hidden');
-        downloadBtn.classList.add('hidden');
-        showMessage('Starting generation process... this may take a few minutes.');
+        downloadContainer.classList.add('hidden');
+        downloadContainer.innerHTML = ''; // Clear previous buttons
+        showMessage('Sending request... This might take a few minutes.');
 
         try {
             const response = await fetch('/api/text-to-3d', {
@@ -34,20 +32,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({ prompt: prompt }),
             });
 
+            const data = await response.json();
+
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'An unknown error occurred.');
+                throw new Error(data.message || 'An unknown error occurred.');
             }
 
-            const data = await response.json();
-            modelUrl = data.model_url; // Save the model URL
-
             showMessage('Model generated successfully! Loading viewer...', 'success');
-            
-            // Display the model viewer
-            viewerIframe.src = `https://3dviewer.net/#model=${modelUrl}`;
+
+            // Display the model in <model-viewer>
+            modelViewer.src = data.model_url; // The GLB URL
             modelViewer.classList.remove('hidden');
-            downloadBtn.classList.remove('hidden'); // Show the download button
+
+            // Dynamically create download buttons
+            createDownloadButtons(data.download_urls);
+            downloadContainer.classList.remove('hidden');
 
         } catch (error) {
             console.error('Error:', error);
@@ -58,23 +57,28 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    downloadBtn.addEventListener('click', () => {
-        if (modelUrl) {
-            const a = document.createElement('a');
-            a.href = modelUrl;
-            // Suggest a filename for the download
-            const filename = (promptInput.value.trim().replace(/\s+/g, '_') || 'model') + '.glb';
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-        } else {
-            showMessage('No model URL found to download.', 'error');
+    function createDownloadButtons(urls) {
+        downloadContainer.innerHTML = ''; // Clear any existing buttons
+        for (const format in urls) {
+            if (urls[format]) {
+                const button = document.createElement('button');
+                button.textContent = `Download ${format.toUpperCase()}`;
+                button.addEventListener('click', () => {
+                    const a = document.createElement('a');
+                    a.href = urls[format];
+                    const filename = (promptInput.value.trim().replace(/\s+/g, '_') || 'model') + `.${format}`;
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                });
+                downloadContainer.appendChild(button);
+            }
         }
-    });
+    }
 
     function showMessage(message, type = 'info') {
         messageArea.textContent = message;
-        messageArea.style.color = type === 'error' ? '#d9534f' : '#333';
+        messageArea.className = `message ${type}`;
     }
 });

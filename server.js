@@ -1,41 +1,27 @@
 const express = require('express');
-const cors = require('cors');
 const fetch = require('node-fetch');
-const path = require('path');
-
 const app = express();
 
-// Serve static files from the root directory
-app.use(express.static(path.join(__dirname)));
-
-// Explicitly serve index.html for the root URL
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
-});
-
-app.use(cors());
 app.use(express.json());
+app.use(express.static('.')); // Serve static files from the root
 
 const MESHY_API_KEY = process.env.MESHY_API_KEY;
+const MESHY_API_URL = 'https://api.meshy.ai/openapi/v2/text-to-3d';
 
-if (!MESHY_API_KEY) {
-    console.error("MESHY_API_KEY is not set. Please add it to your environment variables.");
-}
-
-// This is the route the frontend calls
 app.post('/api/text-to-3d', async (req, res) => {
     const { prompt } = req.body;
 
     if (!prompt) {
-        return res.status(400).json({ error: 'Prompt is required' });
+        return res.status(400).json({ message: 'Prompt is required' });
+    }
+    if (!MESHY_API_KEY) {
+        return res.status(500).json({ message: 'API key is not configured on the server.' });
     }
 
     try {
-        console.log(`Received request for prompt: "${prompt}"`);
-
-        // Step 1: Create the 3D generation task with Meshy
-        console.log('Sending request to Meshy API...');
-        const meshyResponse = await fetch(MESHY_API_URL, {
+        console.log(`Creating Meshy task for prompt: "${prompt}"`);
+        // Step 1: Create the task
+        const createResponse = await fetch(MESHY_API_URL, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${MESHY_API_KEY}`,
@@ -43,42 +29,63 @@ app.post('/api/text-to-3d', async (req, res) => {
             },
             body: JSON.stringify({
                 prompt: prompt,
-                mode: "preview", // Required by the v2 API
+                mode: "preview",
                 art_style: 'realistic',
             }),
         });
 
-        const meshyData = await meshyResponse.json();
-        console.log('Received response from Meshy API:', meshyData);
-
-        if (!meshyResponse.ok) {
-            // If Meshy API returns an error, forward it to the client
-            const errorDetail = meshyData.message || 'Unknown error from Meshy API';
-            console.error(`Meshy API error: ${meshyResponse.status} - ${errorDetail}`);
-            return res.status(meshyResponse.status).json({ 
-                message: `Failed to create 3D task: ${errorDetail}` 
-            });
+        const createData = await createResponse.json();
+        if (!createResponse.ok) {
+            console.error('Meshy API error (create):', createData);
+            return res.status(createResponse.status).json({ message: `Failed to create 3D task: ${createData.message || 'Unknown error'}` });
         }
 
-        // The v2 API directly returns the task ID in the 'result' field
-        const taskId = meshyData.result;
-        console.log(`Successfully created Meshy task with ID: ${taskId}`);
+        const taskId = createData.result;
+        console.log(`Task created with ID: ${taskId}. Starting to poll for results...`);
 
-        // For now, we will just return the task ID.
-        // The full implementation would require polling for the result.
-        // Let's first confirm the creation works.
-        res.status(200).json({ 
-            message: "Task created successfully!",
-            taskId: taskId 
-        });
+        // Step 2: Poll for the result
+        let attempts = 0;
+        const maxAttempts = 100;
+        const interval = 10000; // 10 seconds
+
+        while (attempts < maxAttempts) {
+            const getResponse = await fetch(`${MESHY_API_URL}/${taskId}`, {
+                method: 'GET',
+                headers: { 'Authorization': `Bearer ${MESHY_API_KEY}` },
+            });
+
+            const data = await getResponse.json();
+
+            if (!getResponse.ok) {
+                 console.error('Meshy API error (polling):', data);
+                 return res.status(getResponse.status).json({ message: `Failed to get task status: ${data.message || 'Unknown error'}` });
+            }
+            
+            console.log(`Polling attempt ${attempts + 1}: Task status is ${data.status}`);
+
+            if (data.status === 'SUCCEEDED') {
+                console.log('Task succeeded! Model URLs:', data.model_urls);
+                // User wants STL, but GLB is the primary format for web viewers.
+                // Let's return both if available, but prioritize GLB for the viewer.
+                return res.json({ 
+                    model_url: data.model_urls.glb, // For the viewer
+                    download_urls: data.model_urls // For the download button
+                });
+            } else if (data.status === 'FAILED') {
+                console.error('Meshy task failed:', data.error);
+                return res.status(500).json({ message: `Model generation failed: ${data.error.message}` });
+            }
+
+            attempts++;
+            await new Promise(resolve => setTimeout(resolve, interval));
+        }
+
+        return res.status(504).json({ message: 'Gateway Timeout: Model generation took too long.' });
 
     } catch (error) {
-        console.error('Server error in /api/text-to-3d:', error);
-        res.status(500).json({ error: 'Internal Server Error on our side.' });
+        console.error('Server error:', error);
+        res.status(500).json({ message: 'An internal server error occurred.' });
     }
 });
 
-// Export the app for Vercel
 module.exports = app;
-
-const MESHY_API_URL = 'https://api.meshy.ai/openapi/v2/text-to-3d';
