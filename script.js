@@ -1,84 +1,80 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const promptForm = document.getElementById('prompt-form');
+    const form = document.getElementById('generator-form');
     const promptInput = document.getElementById('prompt-input');
-    const chatBox = document.getElementById('chat-box');
-    const viewerContainer = document.getElementById('viewer-container');
+    const generateBtn = document.getElementById('generate-btn');
     const downloadBtn = document.getElementById('download-btn');
-    let modelUrl = null;
+    const messageArea = document.getElementById('message-area');
+    const modelViewer = document.getElementById('model-viewer');
+    const viewerIframe = document.getElementById('viewer-iframe');
 
-    promptForm.addEventListener('submit', async (e) => {
+    let modelUrl = null; // Variable to store the model URL
+
+    form.addEventListener('submit', async (e) => {
         e.preventDefault();
         const prompt = promptInput.value.trim();
-        if (!prompt) return;
 
-        appendMessage('user', prompt);
-        promptInput.value = '';
-        downloadBtn.style.display = 'none';
-        modelUrl = null;
+        if (!prompt) {
+            showMessage('Please enter a prompt.', 'error');
+            return;
+        }
 
-        // Simulate AI thinking
-        appendMessage('assistant', '正在生成您的模型...');
+        // Reset UI for new generation
+        generateBtn.disabled = true;
+        generateBtn.textContent = 'Generating...';
+        modelViewer.classList.add('hidden');
+        downloadBtn.classList.add('hidden');
+        showMessage('Starting generation process... this may take a few minutes.');
 
-        fetch('/api/text-to-3d', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ prompt: prompt })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.model_url) {
-                modelUrl = data.model_url;
-                displayModel(modelUrl);
-                updateAssistantMessage('您的模型已生成。');
-                downloadBtn.style.display = 'inline-block';
-            } else {
-                updateAssistantMessage('生成模型时出错，请稍后再试。');
-                console.error('Meshy API Error:', data);
+        try {
+            const response = await fetch('/api/text-to-3d', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ prompt: prompt }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'An unknown error occurred.');
             }
-        })
-        .catch(error => {
-            updateAssistantMessage('生成模型时出错，请稍后再试。');
-            console.error('Fetch Error:', error);
-        });
+
+            const data = await response.json();
+            modelUrl = data.model_url; // Save the model URL
+
+            showMessage('Model generated successfully! Loading viewer...', 'success');
+            
+            // Display the model viewer
+            viewerIframe.src = `https://3dviewer.net/#model=${modelUrl}`;
+            modelViewer.classList.remove('hidden');
+            downloadBtn.classList.remove('hidden'); // Show the download button
+
+        } catch (error) {
+            console.error('Error:', error);
+            showMessage(`Error: ${error.message}`, 'error');
+        } finally {
+            generateBtn.disabled = false;
+            generateBtn.textContent = 'Generate';
+        }
     });
 
     downloadBtn.addEventListener('click', () => {
         if (modelUrl) {
             const a = document.createElement('a');
             a.href = modelUrl;
-            a.download = 'model.stl'; 
+            // Suggest a filename for the download
+            const filename = (promptInput.value.trim().replace(/\s+/g, '_') || 'model') + '.glb';
+            a.download = filename;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
+        } else {
+            showMessage('No model URL found to download.', 'error');
         }
     });
 
-    function appendMessage(sender, text) {
-        const messageElement = document.createElement('div');
-        messageElement.classList.add('message', `${sender}-message`);
-        messageElement.textContent = text;
-        chatBox.appendChild(messageElement);
-        chatBox.scrollTop = chatBox.scrollHeight;
-    }
-
-    function updateAssistantMessage(text) {
-        const assistantMessages = chatBox.querySelectorAll('.assistant-message');
-        const lastMessage = assistantMessages[assistantMessages.length - 1];
-        if (lastMessage) {
-            lastMessage.textContent = text;
-        }
-    }
-
-    function displayModel(url) {
-        viewerContainer.innerHTML = `
-            <iframe
-                src="https://www.viewstl.com/?embedded&url=${encodeURIComponent(url)}"
-                width="100%"
-                height="100%"
-                frameborder="0"
-            ></iframe>
-        `;
+    function showMessage(message, type = 'info') {
+        messageArea.textContent = message;
+        messageArea.style.color = type === 'error' ? '#d9534f' : '#333';
     }
 });

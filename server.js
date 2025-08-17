@@ -1,57 +1,93 @@
-require('dotenv').config();
 const express = require('express');
-const axios = require('axios');
 const cors = require('cors');
-const path = require('path'); // 新增
+const fetch = require('node-fetch');
+const path = require('path');
 
 const app = express();
-const port = process.env.PORT || 3000;
-```
-// 托管前端静态文件
-app.use(express.static(path.join(__dirname))); 
 
-// Explicitly serve index.html for the root URL to fix "Cannot GET /" on Vercel
+// 托管前端静态文件
+app.use(express.static(path.join(__dirname)));
+
+// 明确为根 URL 提供 index.html
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 app.use(cors());
-```app.use(express.json());
+app.use(express.json());
 
 const MESHY_API_KEY = process.env.MESHY_API_KEY;
 
 if (!MESHY_API_KEY) {
-    console.error('Error: MESHY_API_KEY is not defined. Please create a .env file and add your API key.');
-    process.exit(1);
+    console.error("MESHY_API_KEY is not set. Please add it to your environment variables.");
 }
 
 app.post('/api/text-to-3d', async (req, res) => {
-    const { prompt } = req.body;
+    const { prompt, art_style } = req.body;
 
     if (!prompt) {
         return res.status(400).json({ error: 'Prompt is required' });
     }
 
     try {
-                const response = await axios.post('https://api.meshy.ai/openapi/v2/text-to-3d',
-            { 
+        // 1. 创建任务
+        const createResponse = await fetch('https://api.meshy.ai/v1/text-to-3d', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${MESHY_API_KEY}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
                 prompt: prompt,
-                art_style: 'realistic',
-                output_format: 'stl'
-            }, 
-            {
-                headers: {
-                    'Authorization': `Bearer ${MESHY_API_KEY}`
-                }
+                art_style: art_style,
+                mode: "preview"
+            }),
+        });
+
+        if (!createResponse.ok) {
+            const errorText = await createResponse.text();
+            console.error('Meshy API error (create):', errorText);
+            return res.status(createResponse.status).json({ error: `Failed to create 3D task: ${errorText}` });
+        }
+
+        const { result: task_id } = await createResponse.json();
+
+        // 2. 轮询结果
+        let attempts = 0;
+        const maxAttempts = 100;
+        const interval = 10000; // 10 秒
+
+        while (attempts < maxAttempts) {
+            const getResponse = await fetch(`https://api.meshy.ai/v1/text-to-3d/${task_id}`, {
+                method: 'GET',
+                headers: { 'Authorization': `Bearer ${MESHY_API_KEY}` },
+            });
+
+            if (!getResponse.ok) {
+                const errorText = await getResponse.text();
+                console.error('Meshy API error (get):', errorText);
+                return res.status(getResponse.status).json({ error: `Failed to get 3D task status: ${errorText}` });
             }
-        );
-        res.json(response.data);
+
+            const data = await getResponse.json();
+
+            if (data.status === 'SUCCEEDED') {
+                return res.json({ model_url: data.model_urls.glb });
+            } else if (data.status === 'FAILED') {
+                return res.status(500).json({ error: '3D model generation failed.' });
+            }
+
+            attempts++;
+            await new Promise(resolve => setTimeout(resolve, interval));
+        }
+
+        return res.status(504).json({ error: 'Gateway Timeout: Model generation took too long.' });
+
     } catch (error) {
-        console.error('Error proxying to Meshy API:', error.response ? error.response.data : error.message);
-        res.status(error.response ? error.response.status : 500).json({ error: 'Failed to generate model' });
+        console.error('Server error:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
     }
 });
 
-app.listen(port, () => {
-    console.log(`Proxy server listening at http://localhost:${port}`);
-});
+// 为 Vercel 的无服务器环境导出 app 句柄
+module.exports = app;
