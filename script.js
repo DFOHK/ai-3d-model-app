@@ -40,7 +40,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
             showMessage('Model generated successfully! Loading viewer...', 'success');
 
-            // Display the model in <model-viewer>
+            // Add event listeners to handle loading and errors
+            modelViewer.addEventListener('error', (event) => {
+                console.error('Error loading model:', event.detail);
+                showMessage(`Failed to load 3D model in the viewer. You can still download it. Error: ${event.detail.source.error}`, 'error');
+            }, { once: true });
+
+            modelViewer.addEventListener('load', () => {
+                console.log('3D Model loaded successfully.');
+                // You can keep the success message or change it
+            }, { once: true });
+
+            // Set the model source and make it visible
             modelViewer.src = data.model_url; // The GLB URL
             modelViewer.classList.remove('hidden');
 
