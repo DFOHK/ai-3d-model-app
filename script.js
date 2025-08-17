@@ -51,8 +51,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 // You can keep the success message or change it
             }, { once: true });
 
-            // Set the model source and make it visible
-            modelViewer.src = data.model_url; // The GLB URL
+            // Set the model source through our CORS proxy and make it visible
+            const proxyUrl = `/api/get-model?url=${encodeURIComponent(data.model_url)}`;
+            modelViewer.src = proxyUrl;
             modelViewer.classList.remove('hidden');
 
             // Dynamically create download buttons

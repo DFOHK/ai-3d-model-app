@@ -88,4 +88,30 @@ app.post('/api/text-to-3d', async (req, res) => {
     }
 });
 
+// New proxy route to fetch the model and bypass CORS
+app.get('/api/get-model', async (req, res) => {
+    const { url } = req.query;
+    if (!url) {
+        return res.status(400).json({ message: 'Model URL is required' });
+    }
+
+    try {
+        console.log(`Proxying request for model URL: ${url}`);
+        const modelResponse = await fetch(url);
+        if (!modelResponse.ok) {
+            const errorText = await modelResponse.text();
+            console.error(`Failed to fetch model from source: ${modelResponse.status}`, errorText);
+            return res.status(modelResponse.status).send(errorText);
+        }
+
+        // Set the correct content type for the 3D model
+        res.setHeader('Content-Type', modelResponse.headers.get('content-type'));
+        modelResponse.body.pipe(res);
+
+    } catch (error) {
+        console.error('Proxy error:', error);
+        res.status(500).json({ message: 'Failed to proxy model request.' });
+    }
+});
+
 module.exports = app;
