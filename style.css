@@ -121,22 +121,25 @@ button:disabled {
 }
 
 #download-btn:hover {
-    background-color: #218838;
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
 }
 
 #message-area {
     margin-top: 1.5rem;
     text-align: center;
-    font-size: 0.9rem;
-    color: #333;
+    font-size: 1rem;
+    font-weight: 600;
 }
 
 #model-viewer {
     width: 100%;
     height: 480px;
     margin-top: 20px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
+    border: none;
+    border-radius: 15px;
+    background-color: rgba(255, 255, 255, 0.5);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
 }
 
 #download-container {
@@ -144,39 +147,43 @@ button:disabled {
     display: flex;
     gap: 10px;
     flex-wrap: wrap;
+    justify-content: center;
 }
 
 #download-container button {
-    background-color: #28a745;
+    background: linear-gradient(45deg, #48c6ef, #6f86d6);
     color: white;
-    padding: 10px 15px;
+    padding: 10px 20px;
     border: none;
-    border-radius: 5px;
+    border-radius: 10px;
     cursor: pointer;
-    font-size: 16px;
-    transition: background-color 0.3s;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
 #download-container button:hover {
-    background-color: #218838;
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
 }
 
 .message {
     margin-top: 15px;
-    padding: 10px;
-    border-radius: 5px;
+    padding: 1rem;
+    border-radius: 10px;
+    font-weight: 600;
+    border: none;
 }
 
 .message.success {
     color: #155724;
     background-color: #d4edda;
-    border: 1px solid #c3e6cb;
 }
 
 .message.error {
     color: #721c24;
     background-color: #f8d7da;
-    border: 1px solid #f5c6cb;
 }
 
 .hidden {
@@ -187,45 +194,62 @@ button:disabled {
 #color-editor-container {
     margin-top: 2rem;
     padding: 1.5rem;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    background-color: #fafafa;
+    border: none;
+    border-radius: 15px;
+    background-color: rgba(255, 255, 255, 0.5);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
 }
 
 #color-editor-container h3 {
     margin-top: 0;
     margin-bottom: 1.5rem;
     text-align: center;
-    color: #333;
-    font-size: 1.25rem;
+    color: #ff6b6b;
+    font-size: 1.5rem;
+    font-weight: 700;
 }
 
 #color-pickers {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.5rem;
 }
 
 .color-picker-item {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 1rem;
+    background-color: rgba(255, 255, 255, 0.7);
+    padding: 0.75rem;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.color-picker-item:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
 }
 
 .color-picker-item label {
-    font-weight: 500;
+    font-weight: 600;
     color: #555;
+    font-size: 1rem;
 }
 
 .color-picker-item input[type="color"] {
     -webkit-appearance: none;
-    width: 40px;
-    height: 40px;
+    width: 45px;
+    height: 45px;
     border: none;
     cursor: pointer;
     padding: 0;
     border-radius: 50%;
-    box-shadow: 0 0 5px rgba(0,0,0,0.1);
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    transition: transform 0.2s;
+}
+
+.color-picker-item input[type="color"]:hover {
+    transform: scale(1.1);
 }
 
 .color-picker-item input[type="color"]::-webkit-color-swatch-wrapper {
@@ -234,7 +258,7 @@ button:disabled {
 }
 
 .color-picker-item input[type="color"]::-webkit-color-swatch {
-    border: 2px solid #fff;
+    border: 3px solid #fff;
     border-radius: 50%;
-    box-shadow: inset 0 0 2px rgba(0,0,0,0.2);
+    box-shadow: inset 0 0 5px rgba(0,0,0,0.2);
 }

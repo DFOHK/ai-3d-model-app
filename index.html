@@ -3,25 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 3D Model Generator</title>
+    <title>AI 3D Model Generator / AI 3D 模型生成器</title>
     <link rel="stylesheet" href="style.css">
     <!-- Import the <model-viewer> component -->
     <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
 </head>
 <body>
     <div class="container">
-        <h1>AI 3D Model Generator</h1>
-        <p>Bring your ideas to life. Describe what you want to create, and our AI will generate a 3D model for you.</p>
+        <h1>AI 3D Model Generator / AI 3D 模型生成器</h1>
+        <p>Bring your ideas to life. Describe what you want to create, and our AI will generate a 3D model for you. / 將您的想法變為現實。描述您想創造什麼，我們的 AI 將為您生成一個 3D 模型。</p>
         <form id="generator-form">
-            <input type="text" id="prompt-input" placeholder="e.g., A futuristic spaceship" required>
-            <button type="submit" id="generate-btn">Generate</button>
+            <input type="text" id="prompt-input" placeholder="e.g., A futuristic spaceship / 例如，一艘未來派的太空船" required>
+            <button type="submit" id="generate-btn">Generate / 生成</button>
         </form>
         <div id="message-area"></div>
         <!-- Use <model-viewer> for 3D display -->
         <div id="status-message" class="hidden"></div>
         <model-viewer id="model-viewer" src="" ar ar-modes="webxr scene-viewer quick-look" camera-controls tone-mapping="commerce" poster="data:," shadow-intensity="1" class="hidden" style="width: 100%; height: 400px;"></model-viewer>
         <div id="color-editor-container" class="hidden">
-            <h3>Color Editor</h3>
+            <h3>Color Editor / 顏色編輯器</h3>
             <div id="color-pickers">
                 <!-- Color pickers will be dynamically generated here -->
             </div>
