@@ -18,9 +18,16 @@
         </form>
         <div id="message-area"></div>
         <!-- Use <model-viewer> for 3D display -->
-        <model-viewer id="model-viewer" src="" alt="Generated 3D Model" auto-rotate camera-controls class="hidden"></model-viewer>
-        <div id="download-container" class="hidden">
-            <!-- Download buttons will be dynamically added here -->
+        <div id="status-message" class="hidden"></div>
+        <model-viewer id="model-viewer" src="" ar ar-modes="webxr scene-viewer quick-look" camera-controls tone-mapping="commerce" poster="data:," shadow-intensity="1" class="hidden" style="width: 100%; height: 400px;"></model-viewer>
+        <div id="color-editor-container" class="hidden">
+            <h3>Color Editor</h3>
+            <div id="color-pickers">
+                <!-- Color pickers will be dynamically generated here -->
+            </div>
+        </div>
+        <div id="download-buttons" class="hidden">
+            <!-- Download buttons will be generated here -->
         </div>
     </div>
     <script src="script.js"></script>

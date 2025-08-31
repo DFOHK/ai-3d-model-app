@@ -1,9 +1,12 @@
+require('dotenv').config();
 const express = require('express');
 const fetch = require('node-fetch');
+const cors = require('cors');
 const app = express();
 
 app.use(express.json());
 app.use(express.static('.')); // Serve static files from the root
+app.use(cors());
 
 const MESHY_API_KEY = process.env.MESHY_API_KEY;
 const MESHY_API_URL = 'https://api.meshy.ai/openapi/v2/text-to-3d';
@@ -112,6 +115,12 @@ app.get('/api/get-model', async (req, res) => {
         console.error('Proxy error:', error);
         res.status(500).json({ message: 'Failed to proxy model request.' });
     }
+});
+
+// Start the server for local development
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, () => {
+    console.log(`Server is running on http://localhost:${PORT}`);
 });
 
 module.exports = app;

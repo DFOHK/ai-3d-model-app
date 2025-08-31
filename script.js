@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const generateBtn = document.getElementById('generate-btn');
     const messageArea = document.getElementById('message-area');
     const modelViewer = document.getElementById('model-viewer');
-    const downloadContainer = document.getElementById('download-container');
+    const downloadContainer = document.getElementById('download-buttons');
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
         showMessage('Sending request... This might take a few minutes.');
 
         try {
-            const response = await fetch('/api/text-to-3d', {
+            const response = await fetch('http://localhost:3001/api/text-to-3d', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -42,13 +42,47 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Add event listeners to handle loading and errors
             modelViewer.addEventListener('error', (event) => {
-                console.error('Error loading model:', event.detail);
-                showMessage(`Failed to load 3D model in the viewer. You can still download it. Error: ${event.detail.source.error}`, 'error');
+                statusMessage.textContent = `Error loading model: ${event.detail}`;
+                statusMessage.style.color = 'red';
             }, { once: true });
 
+            // When model is loaded, create color pickers for each material
             modelViewer.addEventListener('load', () => {
-                console.log('3D Model loaded successfully.');
-                // You can keep the success message or change it
+                const colorEditorContainer = document.getElementById('color-editor-container');
+                const colorPickers = document.getElementById('color-pickers');
+                colorPickers.innerHTML = ''; // Clear previous pickers
+
+                const materials = modelViewer.model.materials;
+                materials.forEach((material, index) => {
+                    const pickerContainer = document.createElement('div');
+                    pickerContainer.className = 'color-picker-item';
+
+                    const label = document.createElement('label');
+                    label.textContent = `${material.name || `Part ${index + 1}`}:`;
+                    label.htmlFor = `material-color-${index}`;
+
+                    const colorInput = document.createElement('input');
+                    colorInput.type = 'color';
+                    colorInput.id = `material-color-${index}`;
+                    const currentColor = material.pbrMetallicRoughness.baseColorFactor;
+                    colorInput.value = `#${Math.round(currentColor[0] * 255).toString(16).padStart(2, '0')}${Math.round(currentColor[1] * 255).toString(16).padStart(2, '0')}${Math.round(currentColor[2] * 255).toString(16).padStart(2, '0')}`;
+
+                    colorInput.addEventListener('input', (event) => {
+                        const newColor = event.target.value;
+                        const r = parseInt(newColor.substr(1, 2), 16) / 255;
+                        const g = parseInt(newColor.substr(3, 2), 16) / 255;
+                        const b = parseInt(newColor.substr(5, 2), 16) / 255;
+                        material.pbrMetallicRoughness.setBaseColorFactor([r, g, b, 1]);
+                    });
+
+                    pickerContainer.appendChild(label);
+                    pickerContainer.appendChild(colorInput);
+                    colorPickers.appendChild(pickerContainer);
+                });
+
+                if (materials.length > 0) {
+                    colorEditorContainer.classList.remove('hidden');
+                }
             }, { once: true });
 
             // Set the model source through our CORS proxy and make it visible
