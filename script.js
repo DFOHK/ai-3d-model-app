@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
         showMessage('Sending request... This might take a few minutes.');
 
         try {
-            const response = await fetch('http://localhost:3001/api/text-to-3d', {
+            const response = await fetch('http://localhost:3000/api/text-to-3d', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
